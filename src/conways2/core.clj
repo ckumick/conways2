@@ -30,22 +30,14 @@
   (defn discardKnownCells [n]
     (let [[nx ny] n]
       (nil? (getCellValue board [nx ny]))))
-  (loop [b board
-         p (filter discardKnownCells (map toAbs nOffsets))]
-    (if (empty? p)
-      b
-      (recur (setCellValue b (first p) false) (rest p)))))
+  (reduce #(setCellValue %1 %2 false) board (filter discardKnownCells (map toAbs nOffsets))))
 
 (defn- createLife
   [board [x y]]
-  (setCellValue board [x y] true))
+  (addNeighboursToMatrix (setCellValue board [x y] true) [x y]))
 
 (defn createLifeAt [board & points]
-  (loop [b board
-         p points]
-    (if (empty? p)
-      b
-      (recur (addNeighboursToMatrix (createLife b (first p)) (first p)) (rest p)))))
+  (reduce createLife board points))
 
 (defn isAlive?
   [board [x y]]
@@ -55,32 +47,28 @@
     cell))
 
 (defn- nCount [board [x y]]
-  (defn toAbs [n]
+  (defn toAbsPt [n]
     (let [[nx ny] n]
       (vector (+ x nx) (+ y ny))))
   (defn keepAliveCells [n]
     (let [[nx ny] n]
       (= true (getCellValue board [nx ny]))))
-  (count (filter keepAliveCells (map toAbs nOffsets))))
+  (count (filter keepAliveCells (map toAbsPt nOffsets))))
+
+(defn- isAliveAfterTic?
+  [board [x y]]
+  (let [count (nCount board [x y])]
+    (cond
+      (= count 3) true
+      (and (= count 2) (isAlive? board [x y])) true
+      :else false)))
 
 (defn tic [board]
-  (loop [b emptyBoard
-         x board]
-    (if (empty? x)
-      b
-      (let [[kx vx] (first x)]
-        (recur
-          (loop [by b
-                 y vx]
-            (if (empty? y)
-              by
-              (let [[ky vy] (first y)
-                    count (nCount board [kx ky])]
-                (cond
-                  (= count 3) (recur (createLifeAt by [kx ky]) (rest y))
-                  (and (isAlive? board [kx ky]) (= count 2)) (recur (createLifeAt by [kx ky]) (rest y))
-                  :else (recur by (rest y))))))
-          (rest x))))))
+  (reduce createLifeAt emptyBoard
+          (filter #(isAliveAfterTic? board %1)
+               (for [x (keys board)
+                     y (keys (get board x))]
+                 [x y]))))
 
 (def rs 4)
 (def ws 200)
@@ -138,7 +126,7 @@
         (let []
           (do
             (.repaint panel)
-            (. Thread sleep 100)
+            (. Thread sleep 1000)
             (reset! lifeBoard (tic @lifeBoard))
             (recur)))))))
 
@@ -146,7 +134,7 @@
   (apply createLifeAt emptyBoard
                 (for [x (range xSize) y (range ySize)
                       :when (> 20 (rand-int 100))]
-                  [x y])))
+                  [(+ x 50) (+ y 50)])))
 
 (defn -main
   [& args]
