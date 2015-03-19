@@ -11,22 +11,15 @@
 
 (defn- getCellValue
   [board [x y]]
-  (let [row (board x)]
-    (if (nil? row)
-      nil
-      (row y))))
+  (get board [x y]))
 
 (defn- getCellsWithValues
   [board]
-  (for [x (keys board)
-        y (keys (get board x))]
-    [x y]))
+  (keys board))
 
 (defn- setCellValue
   [board [x y] value]
-  (if (contains? board x)
-    (assoc board x (assoc (get board x) y value))
-    (assoc board x (into (sorted-map) {y value}))))
+  (assoc board [x y] value))
 
 (defn addNeighboursToMatrix
   [board [x y]]
