@@ -16,6 +16,12 @@
       nil
       (row y))))
 
+(defn- getCellsWithValues
+  [board]
+  (for [x (keys board)
+        y (keys (get board x))]
+    [x y]))
+
 (defn- setCellValue
   [board [x y] value]
   (if (contains? board x)
@@ -66,9 +72,7 @@
 (defn tic [board]
   (reduce createLifeAt emptyBoard
           (filter #(isAliveAfterTic? board %1)
-               (for [x (keys board)
-                     y (keys (get board x))]
-                 [x y]))))
+                  (getCellsWithValues board))))
 
 (def rs 4)
 (def ws 200)
